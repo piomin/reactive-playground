@@ -39,6 +39,7 @@ class HelloTest {
     fun test3() {
         var employees: Flux<Employee> = getDepartmentsByOrganization(1)
                 .flatMapIterable { department -> department.employees }
+        employees.subscribe(System.out::println)
 
         val organization : Mono<Organization> = getOrganizationByName("test")
                 .zipWhen { organization ->

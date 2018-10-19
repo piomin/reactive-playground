@@ -1,6 +1,6 @@
 package pl.piomin.service
 
-class Employee(var id: Int, var name: String, var salary: Int) {
+data class Employee(var id: Int, var name: String, var salary: Int) {
     var organizationId: Int? = null
     var departmentId: Int? = null
 
