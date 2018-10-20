@@ -37,22 +37,27 @@ class HelloTest {
 
     @Test
     fun test3() {
-        var employees: Flux<Employee> = getDepartmentsByOrganization(1)
+        var organization: Mono<Organization> = getDepartmentsByOrganization(1)
                 .flatMapIterable { department -> department.employees }
-        employees.subscribe(System.out::println)
+                .collectList()
+                .map { t -> Organization(1, "X", t) }
+        Assert.assertEquals(4, organization.block().employees.size)
+    }
 
-        val organization : Mono<Organization> = getOrganizationByName("test")
-                .zipWhen { organization ->
-                    employees.collectList()
+    @Test
+    fun test4() {
+        val persons: Flux<Person> = getPersonsFirstPart()
+                .mergeOrderedWith(getPersonsSecondPart(), Comparator { o1, o2 -> o1.id.compareTo(o2.id) })
+                .map { person ->
+                    Person(person.id, person.firstName!!, person.lastName!!,
+                            "${person.firstName}-${person.lastName}@example.com")
                 }
-                .map { tuple -> Organization(tuple.t1.id, tuple.t1.name, tuple.t2) }
-
-        val org = organization.block()
-        Assert.assertEquals("test", org.name)
-        Assert.assertEquals(1, org.id)
-        Assert.assertEquals(4, org.employees.size)
-        org.employees.stream()
-                .forEach { e -> Assert.assertEquals("Employee${e.id}", e.name) }
+        persons.toIterable().forEachIndexed { index, person ->
+            run {
+                Assert.assertEquals(index + 1, person.id)
+                Assert.assertEquals("${person.firstName}-${person.lastName}@example.com", person.email)
+            }
+        }
     }
 
     private fun getPersonsBasic() : Flux<Person> {
@@ -87,4 +92,15 @@ class HelloTest {
         )
         return Flux.just(dep1, dep2)
     }
+
+    private fun getPersonsFirstPart() : Flux<Person> {
+        return Flux.just(Person(1, "AA", "AA"),
+                Person(3, "BB", "BB"))
+    }
+
+    private fun getPersonsSecondPart() : Flux<Person> {
+        return Flux.just(Person(2, "CC", "CC"),
+                Person(4, "DD", "DD"))
+    }
+
 }
