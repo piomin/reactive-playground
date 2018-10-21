@@ -7,4 +7,9 @@ class Department(var id: Int, var name: String, var organizationId: Int) {
         this.employees.addAll(employees)
     }
 
+    fun addEmployees(employees: MutableList<Employee>) : Department {
+        this.employees.addAll(employees)
+        return this
+    }
+
 }

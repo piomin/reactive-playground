@@ -4,7 +4,9 @@ import org.junit.Assert
 import org.junit.Test
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
+import reactor.core.publisher.GroupedFlux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toFlux
 import kotlin.test.Asserter
 import kotlin.test.assertEquals
 
@@ -42,6 +44,10 @@ class HelloTest {
                 .collectList()
                 .map { t -> Organization(1, "X", t) }
         Assert.assertEquals(4, organization.block().employees.size)
+
+        val employees : Flux<Employee> = organization.
+                flatMapIterable { organization -> organization.employees }
+        Assert.assertEquals(4, employees.toStream().count())
     }
 
     @Test
@@ -57,6 +63,19 @@ class HelloTest {
                 Assert.assertEquals(index + 1, person.id)
                 Assert.assertEquals("${person.firstName}-${person.lastName}@example.com", person.email)
             }
+        }
+    }
+
+    @Test
+    fun test5() {
+        val departments: Flux<Department> = getDepartments()
+                .flatMap { department ->
+                    Mono.just(department)
+                            .zipWith(getEmployees().filter { it.departmentId == department.id }.collectList())
+                            .map { t -> department.addEmployees(t.t2) }
+                }
+        departments.toStream().forEach {
+            Assert.assertEquals(2, it.employees.size)
         }
     }
 
@@ -91,6 +110,18 @@ class HelloTest {
                 )
         )
         return Flux.just(dep1, dep2)
+    }
+
+    private fun getDepartments() : Flux<Department> {
+        return Flux.just(Department(1, "X", 1),
+                         Department(2, "Y", 1))
+    }
+
+    private fun getEmployees() : Flux<Employee> {
+        return Flux.just(Employee(1, "Employee1", 1000, 1, 1),
+                Employee(2, "Employee2", 2000, 1, 1),
+                Employee(3, "Employee3", 1000, 1, 2),
+                Employee(4, "Employee4", 2000, 1, 2))
     }
 
     private fun getPersonsFirstPart() : Flux<Person> {
