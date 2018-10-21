@@ -75,7 +75,7 @@ class HelloTest {
             Assert.assertEquals(2, it.employees.size)
         }
 
-        val departments2 = getEmployees()
+        val departments2: Flux<Department> = getEmployees()
                 .groupBy { it.departmentId }
                 .flatMap { t -> getDepartments().filter { it.id == t.key() }.elementAt(0)
                         .zipWith(t.collectList())
