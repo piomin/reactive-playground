@@ -3,10 +3,7 @@ package pl.piomin.service
 import org.junit.Assert
 import org.junit.Test
 import org.reactivestreams.Publisher
-import reactor.core.publisher.Flux
-import reactor.core.publisher.GroupedFlux
-import reactor.core.publisher.Mono
-import reactor.core.publisher.toFlux
+import reactor.core.publisher.*
 import kotlin.test.Asserter
 import kotlin.test.assertEquals
 
@@ -75,6 +72,16 @@ class HelloTest {
                             .map { t -> department.addEmployees(t.t2) }
                 }
         departments.toStream().forEach {
+            Assert.assertEquals(2, it.employees.size)
+        }
+
+        val departments2 = getEmployees()
+                .groupBy { it.departmentId }
+                .flatMap { t -> getDepartments().filter { it.id == t.key() }.elementAt(0)
+                        .zipWith(t.collectList())
+                        .map { it.t1.addEmployees(it.t2) }
+                }
+        departments2.toStream().forEach {
             Assert.assertEquals(2, it.employees.size)
         }
     }

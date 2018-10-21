@@ -12,4 +12,9 @@ class Department(var id: Int, var name: String, var organizationId: Int) {
         return this
     }
 
+    fun addEmployee(employee: Employee) : Department {
+        this.employees.add(employee)
+        return this
+    }
+
 }
