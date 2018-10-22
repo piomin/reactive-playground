@@ -2,24 +2,21 @@ package pl.piomin.service
 
 import org.junit.Assert
 import org.junit.Test
-import org.reactivestreams.Publisher
-import reactor.core.publisher.*
-import kotlin.test.Asserter
-import kotlin.test.assertEquals
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 class HelloTest {
 
     @Test
-    fun test1() {
-        val persons : Flux<Person> = getPersonsBasic()
-                .zipWith(getPersonsContact())
-                .map { t -> Person(t.t1.id, t.t1.firstName!!, t.t1.lastName!!, t.t2.email!!) }
-        persons.toStream()
-                .forEach { p -> Assert.assertEquals("${p.firstName}-${p.lastName}@example.com", p.email) }
+    fun testScenario3() {
+        val employees : Flux<Employee> = getEmployeesBasic()
+                .zipWith(getEmployeesRelationships())
+                .map { t -> Employee(t.t1.id, t.t1.name, t.t1.salary, t.t2.organizationId!!, t.t2.departmentId!!) }
+        Assert.assertEquals(2, employees.toStream().count())
     }
 
     @Test
-    fun test2() {
+    fun testScenario1() {
         val organization : Mono<Organization> = getOrganizationByName("test")
                 .zipWhen { organization ->
                     getEmployeesByOrganization(organization.id!!).collectList()
@@ -35,7 +32,7 @@ class HelloTest {
     }
 
     @Test
-    fun test3() {
+    fun testScenario5() {
         var organization: Mono<Organization> = getDepartmentsByOrganization(1)
                 .flatMapIterable { department -> department.employees }
                 .collectList()
@@ -48,28 +45,24 @@ class HelloTest {
     }
 
     @Test
-    fun test4() {
-        val persons: Flux<Person> = getPersonsFirstPart()
-                .mergeOrderedWith(getPersonsSecondPart(), Comparator { o1, o2 -> o1.id.compareTo(o2.id) })
-                .map { person ->
-                    Person(person.id, person.firstName!!, person.lastName!!,
-                            "${person.firstName}-${person.lastName}@example.com")
+    fun testScenario4() {
+        val persons: Flux<Employee> = getEmployeesFirstPart()
+                .mergeOrderedWith(getEmployeesSecondPart(), Comparator { o1, o2 -> o1.id.compareTo(o2.id) })
+                .map {
+                    Employee(it.id, it.name, it.salary, 1, 1)
                 }
-        persons.toIterable().forEachIndexed { index, person ->
-            run {
-                Assert.assertEquals(index + 1, person.id)
-                Assert.assertEquals("${person.firstName}-${person.lastName}@example.com", person.email)
-            }
+        persons.toIterable().forEachIndexed { index, employee ->
+            Assert.assertEquals(index + 1, employee.id)
         }
     }
 
     @Test
-    fun test5() {
+    fun testScenario2() {
         val departments: Flux<Department> = getDepartments()
                 .flatMap { department ->
                     Mono.just(department)
                             .zipWith(getEmployees().filter { it.departmentId == department.id }.collectList())
-                            .map { t -> department.addEmployees(t.t2) }
+                            .map { t -> t.t1.addEmployees(t.t2) }
                 }
         departments.toStream().forEach {
             Assert.assertEquals(2, it.employees.size)
@@ -86,14 +79,14 @@ class HelloTest {
         }
     }
 
-    private fun getPersonsBasic() : Flux<Person> {
-        return Flux.just(Person(1, "AB", "BA"),
-                         Person(2, "AA", "BB"))
+    private fun getEmployeesBasic() : Flux<Employee> {
+        return Flux.just(Employee(1, "AA", 1000),
+                Employee(2, "BB", 2000))
     }
 
-    private fun getPersonsContact() : Flux<Person> {
-        return Flux.just(Person(1, "AB-BA@example.com"),
-                         Person(2, "AA-BB@example.com"))
+    private fun getEmployeesRelationships() : Flux<Employee> {
+        return Flux.just(Employee(1, 1, 1),
+                         Employee(2, 1, 2))
     }
 
     private fun getOrganizationByName(name: String) : Mono<Organization> {
@@ -131,14 +124,12 @@ class HelloTest {
                 Employee(4, "Employee4", 2000, 1, 2))
     }
 
-    private fun getPersonsFirstPart() : Flux<Person> {
-        return Flux.just(Person(1, "AA", "AA"),
-                Person(3, "BB", "BB"))
+    private fun getEmployeesFirstPart() : Flux<Employee> {
+        return Flux.just(Employee(1, "AA", 1000), Employee(3, "BB", 3000))
     }
 
-    private fun getPersonsSecondPart() : Flux<Person> {
-        return Flux.just(Person(2, "CC", "CC"),
-                Person(4, "DD", "DD"))
+    private fun getEmployeesSecondPart() : Flux<Employee> {
+        return Flux.just(Employee(2, "CC", 2000), Employee(4, "DD", 4000))
     }
 
 }
