@@ -69,8 +69,8 @@ class HelloTest {
         }
 
         val departments2: Flux<Department> = getEmployees()
-                .groupBy { it.departmentId }
-                .flatMap { t -> getDepartments().filter { it.id == t.key() }.elementAt(0)
+                .groupBy<Int> { emp -> emp.departmentId!! }
+                .flatMap { t -> getDepartments().filter { dept -> dept.id == t.key() }.elementAt(0)
                         .zipWith(t.collectList())
                         .map { it.t1.addEmployees(it.t2) }
                 }
