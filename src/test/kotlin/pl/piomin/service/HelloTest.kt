@@ -24,10 +24,10 @@ class HelloTest {
                 .map { tuple -> Organization(tuple.t1.id, tuple.t1.name, tuple.t2) }
 
         val org = organization.block()
-        Assert.assertEquals("test", org.name)
-        Assert.assertEquals(1, org.id)
-        Assert.assertEquals(2, org.employees.size)
-        org.employees.stream()
+        Assert.assertEquals("test", org!!.name)
+        Assert.assertEquals(1, org!!.id)
+        Assert.assertEquals(2, org!!.employees.size)
+        org!!.employees.stream()
                 .forEach { e -> Assert.assertEquals("Employee${e.id}", e.name) }
     }
 
@@ -37,7 +37,7 @@ class HelloTest {
                 .flatMapIterable { department -> department.employees }
                 .collectList()
                 .map { t -> Organization(1, "X", t) }
-        Assert.assertEquals(4, organization.block().employees.size)
+        Assert.assertEquals(4, organization.block()!!.employees.size)
 
         val employees : Flux<Employee> = organization.
                 flatMapIterable { organization -> organization.employees }
@@ -69,8 +69,8 @@ class HelloTest {
         }
 
         val departments2: Flux<Department> = getEmployees()
-                .groupBy { it.departmentId }
-                .flatMap { t -> getDepartments().filter { it.id == t.key() }.elementAt(0)
+                .groupBy<Int> { emp -> emp.departmentId!! }
+                .flatMap { t -> getDepartments().filter { dept -> dept.id == t.key() }.elementAt(0)
                         .zipWith(t.collectList())
                         .map { it.t1.addEmployees(it.t2) }
                 }
